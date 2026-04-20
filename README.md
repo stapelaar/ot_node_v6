@@ -22,13 +22,13 @@ git reset --hard HEAD && git clean -fd
 
 
 
-# Project Setup — ot_templatev4
+# Project Setup — ot_node_v6_
 
 This document explains how to set up, build, and maintain the ot_templatev4 project in a clean and predictable way. It focuses on node-specific overlays, CoAP transport, sensor publishers, and Git hygiene to prevent accidental inclusion of old files or history.
 
 ---
 
-0. Maak een nieuwe map bv ot_templatev4
+0. Maak een nieuwe map bv ot_node_v6_
 
 
 

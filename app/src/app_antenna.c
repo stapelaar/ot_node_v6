@@ -5,11 +5,9 @@ LOG_MODULE_REGISTER(app_antenna, LOG_LEVEL_INF);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/init.h>
 
-/* RF switch nodes from board DTS:
+/* RF switch nodes (board DTS xiao_nrf54l15_nrf54l15_cpuapp.dts):
  *   rfsw_pwr  GPIO2.3 ACTIVE_HIGH  — powers the RF switch IC
- *   rfsw_ctl  GPIO2.5 ACTIVE_HIGH  — selects antenna:
- *                                     LOW  = internal ceramic
- *                                     HIGH = external u.FL
+ *   rfsw_ctl  GPIO2.5 ACTIVE_HIGH  — LOW = internal, HIGH = external
  */
 #define RFSW_PWR_NODE  DT_NODELABEL(rfsw_pwr)
 #define RFSW_CTL_NODE  DT_NODELABEL(rfsw_ctl)
@@ -35,14 +33,12 @@ static int antenna_init(void)
         return -ENODEV;
     }
 
-    /* Power up the RF switch IC */
     ret = gpio_pin_configure_dt(&rfsw_pwr, GPIO_OUTPUT_ACTIVE);
     if (ret < 0) {
         LOG_ERR("Failed to configure rfsw_pwr: %d", ret);
         return ret;
     }
 
-    /* Select external antenna (CTL high = external) */
     ret = gpio_pin_configure_dt(&rfsw_ctl, GPIO_OUTPUT_INACTIVE);
     if (ret < 0) {
         LOG_ERR("Failed to configure rfsw_ctl: %d", ret);
@@ -55,9 +51,8 @@ static int antenna_init(void)
         return ret;
     }
 
-    LOG_INF("External antenna selected (GPIO2.3=PWR, GPIO2.5=CTL)");
+    LOG_INF("External antenna selected");
     return 0;
 }
 
-/* Run early — before radio init — at APPLICATION level priority 10 */
 SYS_INIT(antenna_init, APPLICATION, 10);

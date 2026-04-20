@@ -2,7 +2,14 @@
 #include <zephyr/logging/log.h>
 #include "app_core.h"
 #include "app_node.h"
+
+#if IS_ENABLED(CONFIG_APP_USE_SHT41_SENSOR)
 #include "sht41.h"
+#endif
+
+#if IS_ENABLED(CONFIG_APP_USE_SCD41_SENSOR)
+#include "scd41.h"
+#endif
 
 LOG_MODULE_REGISTER(app_core, LOG_LEVEL_INF);
 
@@ -17,19 +24,24 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
     ARG_UNUSED(arg2);
     ARG_UNUSED(arg3);
 
-    /* Wait here, inside the thread — never block in a callback */
-    LOG_INF("Sample thread: wachten 5 seconden voor eerste meting...");
+    /* Wait before first measurement to let Thread settle */
     k_msleep(5000);
 
     int counter = 0;
 
     while (1) {
         counter++;
-        LOG_INF("Meetcyclus %d - start", counter);
+        LOG_INF("Cycle %d - start", counter);
 
+#if IS_ENABLED(CONFIG_APP_USE_SHT41_SENSOR)
         sht41_sample_and_publish(app_node_name());
+#endif
 
-        LOG_INF("Meetcyclus %d - klaar", counter);
+#if IS_ENABLED(CONFIG_APP_USE_SCD41_SENSOR)
+        scd41_sample_and_publish(app_node_name());
+#endif
+
+        LOG_INF("Cycle %d - done", counter);
 
         k_msleep(CONFIG_APP_MEASUREMENT_PERIOD_S * 1000);
     }

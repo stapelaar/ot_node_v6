@@ -3,9 +3,9 @@
 
 LOG_MODULE_REGISTER(app_main, LOG_LEVEL_INF);
 
-#define APP_NAME      "ot_node"
-#define APP_VERSION   "v5.0.0-ncs"
-#define APP_BUILD     __DATE__ " " __TIME__
+#define APP_NAME     "ot_node"
+#define APP_VERSION  "v6.1.0-ncs"
+#define APP_BUILD    __DATE__ " " __TIME__
 
 int main(void)
 {
@@ -15,8 +15,6 @@ int main(void)
     LOG_INF(" Starting node ...");
     LOG_INF("========================================");
 
-    /* Niets meer starten hier.
-       Alles gebeurt via SYS_INIT + events. */
-
+    /* Everything starts via SYS_INIT and events. */
     return 0;
 }
