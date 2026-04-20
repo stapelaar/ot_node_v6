@@ -1,0 +1,18 @@
+# Build output
+build/
+
+# macOS
+.DS_Store
+__MACOSX/
+
+# Nordic/Zephyr
+*.hex
+*.bin
+*.elf
+*.map
+*.log
+
+# Editor
+.vscode/
+*.swp
+*~
