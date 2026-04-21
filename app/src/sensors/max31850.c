@@ -171,8 +171,11 @@ void max31850_sample_and_publish(const char *root, const struct ow_inventory *in
                     r.cj_centi / 100, abs(r.cj_centi % 100),
                     r.fault_bits);
 
-            publish_field(root, sensor_name, "TEMP", r.tc_centi);
-            publish_field(root, sensor_name, "CJ",   r.cj_centi);
+            /* Only publish TEMP when the thermocouple reading is valid */
+            if (r.fault_bits == 0) {
+                publish_field(root, sensor_name, "TEMP", r.tc_centi);
+            }
+            publish_field(root, sensor_name, "CJ", r.cj_centi);
             publish_fault(root, sensor_name, r.fault_bits);
         } else {
             LOG_WRN("MAX31850-%d: read failed rc=%d", idx, rc);
