@@ -17,11 +17,19 @@ config APP_PUBLISH_UPTIME
     default y
 
 config APP_USE_SHT41_SENSOR
-    bool "Use SHT41 sensor publisher"
+    bool "Use SHT41 sensor (I2C temp/humidity)"
     default n
 
 config APP_USE_SCD41_SENSOR
-    bool "Use SCD41 sensor publisher"
+    bool "Use SCD41 sensor (I2C CO2/temp/humidity)"
+    default n
+
+config APP_USE_DS18B20_SENSOR
+    bool "Use DS18B20 sensor (1-Wire temperature)"
+    default n
+
+config APP_USE_MAX31850_SENSOR
+    bool "Use MAX31850 sensor (1-Wire thermocouple)"
     default n
 
 config APP_NODE_ID

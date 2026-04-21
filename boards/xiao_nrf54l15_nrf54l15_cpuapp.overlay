@@ -2,21 +2,17 @@
 
 / {
     chosen {
-        /* Gebruik de IEEE802154 radio als Thread L2 */
         zephyr,ieee802154 = &ieee802154;
     };
 
     aliases {
-        /* Alias voor 1-Wire */
         onewire0 = &onewire0;
-
-        /* Alias voor C-kant: DT_ALIAS(i2c0) → &i2c22 */
-        i2c0 = &i2c22;
+        i2c0     = &i2c22;
     };
 
-    /* -------------------------------------------------------
-     * OneWire op GPIO2.2
-     * ------------------------------------------------------- */
+    /* 1-Wire bus on GPIO2.2 (D10 on XIAO).
+     * No child DS18B20 nodes — sensors are discovered at runtime
+     * via w1_search_bus() in onewire_inventory.c */
     onewire0: w1 {
         compatible = "zephyr,w1-gpio";
         gpios = <&gpio2 2 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
@@ -49,25 +45,21 @@
 &i2c22 {
     status = "okay";
     clock-frequency = <I2C_BITRATE_STANDARD>;
-
     pinctrl-0 = <&i2c22_default>;
     pinctrl-1 = <&i2c22_sleep>;
     pinctrl-names = "default", "sleep";
 
-    /* SHT41 (0x44) */
     sht4x0: sht4x@44 {
         compatible = "sensirion,sht4x";
         reg = <0x44>;
-        repeatability = <2>; /* High precision */
+        repeatability = <2>;
         status = "okay";
-        
     };
 
-    /* SCD41 CO2 sensor (0x62) */
     scd41_0: scd41@62 {
         compatible = "sensirion,scd41";
         reg = <0x62>;
-        mode = <1>;   /* 1 = periodic measurement mode */
+        mode = <1>;
         status = "okay";
     };
 };
