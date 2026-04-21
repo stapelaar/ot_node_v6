@@ -2,15 +2,12 @@
 LOG_MODULE_REGISTER(ds18b20, LOG_LEVEL_INF);
 
 #include <zephyr/kernel.h>
-#include <zephyr/device.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/drivers/w1.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 
 #include "ds18b20.h"
-#include "onewire_inventory.h"
 #include "topic.h"
 #include "transport.h"
 
@@ -19,11 +16,6 @@ LOG_MODULE_REGISTER(ds18b20, LOG_LEVEL_INF);
 #define CMD_READ_SCRATCH  0xBE
 #define SCRATCHPAD_SIZE   9
 #define TCONV_MS          750
-
-static const struct device *const w1_bus = DEVICE_DT_GET(DT_ALIAS(onewire0));
-
-static struct ow_inventory s_inv;
-static bool s_scanned;
 
 static uint8_t crc8_maxim(const uint8_t *data, size_t len)
 {
@@ -92,43 +84,30 @@ static void publish_field(const char *root, const char *sensor,
     }
 }
 
-void ds18b20_sample_and_publish(const char *root)
+void ds18b20_sample_and_publish(const char *root, const struct ow_inventory *inv)
 {
-    if (!s_scanned) {
-        if (!device_is_ready(w1_bus)) {
-            static bool warned;
-            if (!warned) {
-                LOG_WRN("DS18B20: 1-Wire bus not ready");
-                warned = true;
-            }
-            return;
-        }
-
-        if (ow_inventory_scan(&s_inv, w1_bus, true, false) != 0) {
-            LOG_WRN("DS18B20: inventory scan failed");
-            return;
-        }
-        s_scanned = true;
+    if (!inv || !inv->bus) {
+        return;
     }
 
-    if (s_inv.ds18b20_count == 0) {
+    if (inv->ds18b20_count == 0) {
         static bool warned;
         if (!warned) {
-            LOG_WRN("DS18B20: no sensors found on bus");
+            LOG_WRN("DS18B20: no sensors in inventory");
             warned = true;
         }
         return;
     }
 
     int ds_index = 0;
-    for (uint8_t i = 0; i < s_inv.count; i++) {
-        if (s_inv.dev[i].family != OW_FAMILY_DS18B20) {
+    for (uint8_t i = 0; i < inv->count; i++) {
+        if (inv->dev[i].family != OW_FAMILY_DS18B20) {
             continue;
         }
         ds_index++;
 
         int32_t temp_mC = 0;
-        int rc = ds18b20_read_one(w1_bus, &s_inv.dev[i].rom, &temp_mC);
+        int rc = ds18b20_read_one(inv->bus, &inv->dev[i].rom, &temp_mC);
 
         char sensor_name[20];
         snprintk(sensor_name, sizeof(sensor_name), "DS18B20-%d", ds_index);

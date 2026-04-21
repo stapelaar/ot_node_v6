@@ -2,15 +2,12 @@
 LOG_MODULE_REGISTER(max31850, LOG_LEVEL_INF);
 
 #include <zephyr/kernel.h>
-#include <zephyr/device.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/drivers/w1.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 
 #include "max31850.h"
-#include "onewire_inventory.h"
 #include "topic.h"
 #include "transport.h"
 
@@ -23,11 +20,6 @@ LOG_MODULE_REGISTER(max31850, LOG_LEVEL_INF);
 #define FAULT_OC  0x01
 #define FAULT_SCG 0x02
 #define FAULT_SCV 0x04
-
-static const struct device *const w1_bus = DEVICE_DT_GET(DT_ALIAS(onewire0));
-
-static struct ow_inventory s_inv;
-static bool s_scanned;
 
 static uint8_t crc8_maxim(const uint8_t *data, size_t len)
 {
@@ -77,12 +69,10 @@ static int max31850_read_one(const struct device *bus,
 
     if (crc8_maxim(sp, 8) != sp[8]) return -EBADMSG;
 
-    /* Thermocouple: 14-bit signed, 0.25 C/LSB */
     int16_t tc_raw = (int16_t)((sp[1] << 8) | sp[0]);
     tc_raw >>= 2;
     out->tc_centi = (int32_t)tc_raw * 25;
 
-    /* Cold junction: 12-bit signed, 0.0625 C/LSB */
     int16_t cj_raw = (int16_t)((sp[3] << 8) | sp[2]);
     cj_raw >>= 4;
     out->cj_centi = ((int32_t)cj_raw * 625) / 100;
@@ -146,43 +136,30 @@ static void publish_fault(const char *root, const char *sensor, uint8_t bits)
     }
 }
 
-void max31850_sample_and_publish(const char *root)
+void max31850_sample_and_publish(const char *root, const struct ow_inventory *inv)
 {
-    if (!s_scanned) {
-        if (!device_is_ready(w1_bus)) {
-            static bool warned;
-            if (!warned) {
-                LOG_WRN("MAX31850: 1-Wire bus not ready");
-                warned = true;
-            }
-            return;
-        }
-
-        if (ow_inventory_scan(&s_inv, w1_bus, false, true) != 0) {
-            LOG_WRN("MAX31850: inventory scan failed");
-            return;
-        }
-        s_scanned = true;
+    if (!inv || !inv->bus) {
+        return;
     }
 
-    if (s_inv.max31850_count == 0) {
+    if (inv->max31850_count == 0) {
         static bool warned;
         if (!warned) {
-            LOG_WRN("MAX31850: no sensors found on bus");
+            LOG_WRN("MAX31850: no sensors in inventory");
             warned = true;
         }
         return;
     }
 
     int idx = 0;
-    for (uint8_t i = 0; i < s_inv.count; i++) {
-        if (s_inv.dev[i].family != OW_FAMILY_MAX31850) {
+    for (uint8_t i = 0; i < inv->count; i++) {
+        if (inv->dev[i].family != OW_FAMILY_MAX31850) {
             continue;
         }
         idx++;
 
         struct max31850_reading r = {0};
-        int rc = max31850_read_one(w1_bus, &s_inv.dev[i].rom, &r);
+        int rc = max31850_read_one(inv->bus, &inv->dev[i].rom, &r);
 
         char sensor_name[20];
         snprintk(sensor_name, sizeof(sensor_name), "MAX31850-%d", idx);

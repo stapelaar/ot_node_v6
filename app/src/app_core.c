@@ -1,5 +1,8 @@
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
+
 #include "app_core.h"
 #include "app_node.h"
 
@@ -9,6 +12,11 @@
 
 #if IS_ENABLED(CONFIG_APP_USE_SCD41_SENSOR)
 #include "scd41.h"
+#endif
+
+#if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR) || IS_ENABLED(CONFIG_APP_USE_MAX31850_SENSOR)
+#define APP_HAS_ONEWIRE 1
+#include "onewire_inventory.h"
 #endif
 
 #if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR)
@@ -23,6 +31,12 @@ LOG_MODULE_REGISTER(app_core, LOG_LEVEL_INF);
 
 static bool thread_attached;
 
+#if APP_HAS_ONEWIRE
+static const struct device *const w1_bus = DEVICE_DT_GET(DT_ALIAS(onewire0));
+static struct ow_inventory ow_inv;
+static bool ow_scanned;
+#endif
+
 K_THREAD_STACK_DEFINE(sample_stack, 8192);
 static struct k_thread sample_thread;
 
@@ -34,6 +48,18 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
 
     /* Let Thread settle before first measurement */
     k_msleep(5000);
+
+#if APP_HAS_ONEWIRE
+    /* One-time 1-Wire bus scan - enables every configured family */
+    if (device_is_ready(w1_bus)) {
+        int rc = ow_inventory_scan(&ow_inv, w1_bus,
+                                   IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR),
+                                   IS_ENABLED(CONFIG_APP_USE_MAX31850_SENSOR));
+        ow_scanned = (rc == 0);
+    } else {
+        LOG_WRN("1-Wire bus not ready, skipping scan");
+    }
+#endif
 
     int counter = 0;
 
@@ -50,11 +76,15 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
 #endif
 
 #if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR)
-        ds18b20_sample_and_publish(app_node_name());
+        if (ow_scanned) {
+            ds18b20_sample_and_publish(app_node_name(), &ow_inv);
+        }
 #endif
 
 #if IS_ENABLED(CONFIG_APP_USE_MAX31850_SENSOR)
-        max31850_sample_and_publish(app_node_name());
+        if (ow_scanned) {
+            max31850_sample_and_publish(app_node_name(), &ow_inv);
+        }
 #endif
 
         LOG_INF("Cycle %d - done", counter);
