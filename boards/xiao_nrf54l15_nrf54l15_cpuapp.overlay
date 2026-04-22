@@ -10,9 +10,7 @@
         i2c0     = &i2c22;
     };
 
-    /* 1-Wire bus on GPIO2.2 (D10 on XIAO).
-     * No child DS18B20 nodes — sensors are discovered at runtime
-     * via w1_search_bus() in onewire_inventory.c */
+    /* 1-Wire bus on GPIO2.2 - sensors discovered at runtime */
     onewire0: w1 {
         compatible = "zephyr,w1-gpio";
         gpios = <&gpio2 2 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
@@ -40,7 +38,7 @@
 };
 
 /* -----------------------------------------------------------
- * I2C22 bus → P1.11 (SCL), P1.10 (SDA)
+ * I2C22 bus -> P1.11 (SCL), P1.10 (SDA)
  * ----------------------------------------------------------- */
 &i2c22 {
     status = "okay";
@@ -60,6 +58,12 @@
         compatible = "sensirion,scd41";
         reg = <0x62>;
         mode = <1>;
+        status = "okay";
+    };
+
+    /* SEN50 - no Zephyr driver, accessed via raw I2C API */
+    sen50_0: sen50@69 {
+        reg = <0x69>;
         status = "okay";
     };
 };

@@ -32,6 +32,10 @@ config APP_USE_MAX31850_SENSOR
     bool "Use MAX31850 sensor (1-Wire thermocouple)"
     default n
 
+config APP_USE_SEN50_SENSOR
+    bool "Use SEN50 sensor (I2C particulate matter)"
+    default n
+
 config APP_NODE_ID
     string "Node ID (e.g. 12 -> ND12)"
     default "00"

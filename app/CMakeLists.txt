@@ -26,6 +26,10 @@ if(CONFIG_APP_USE_SCD41_SENSOR)
     target_sources(app PRIVATE src/sensors/scd41.c)
 endif()
 
+if(CONFIG_APP_USE_SEN50_SENSOR)
+    target_sources(app PRIVATE src/sensors/sen50.c)
+endif()
+
 # 1-Wire shared inventory compiled once when any 1-Wire sensor is enabled
 if(CONFIG_APP_USE_DS18B20_SENSOR OR CONFIG_APP_USE_MAX31850_SENSOR)
     target_sources(app PRIVATE src/sensors/onewire_inventory.c)
