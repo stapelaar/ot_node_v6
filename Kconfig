@@ -36,6 +36,14 @@ config APP_USE_SEN50_SENSOR
     bool "Use SEN50 sensor (I2C particulate matter)"
     default n
 
+config APP_USE_DSMR_SENSOR
+    bool "Use DSMR P1 smart meter reader (UART)"
+    default n
+
+config APP_USE_BMP388_SENSOR
+    bool "Use BMP388 sensor (I2C pressure/temperature)"
+    default n
+
 config APP_NODE_ID
     string "Node ID (e.g. 12 -> ND12)"
     default "00"

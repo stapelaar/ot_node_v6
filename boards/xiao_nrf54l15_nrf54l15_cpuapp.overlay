@@ -10,7 +10,6 @@
         i2c0     = &i2c22;
     };
 
-    /* 1-Wire bus on GPIO2.2 - sensors discovered at runtime */
     onewire0: w1 {
         compatible = "zephyr,w1-gpio";
         gpios = <&gpio2 2 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
@@ -18,28 +17,23 @@
     };
 };
 
-/* -----------------------------------------------------------
- * Thread radio (802.15.4)
- * ----------------------------------------------------------- */
 &ieee802154 {
     status = "okay";
 };
 
-/* -----------------------------------------------------------
- * UARTs
- * ----------------------------------------------------------- */
 &uart20 {
     status = "okay";
     current-speed = <1000000>;
 };
 
 &uart21 {
-    status = "disabled";
+    status = "okay";
+    current-speed = <115200>;
+    pinctrl-0 = <&uart21_default>;
+    pinctrl-1 = <&uart21_sleep>;
+    pinctrl-names = "default", "sleep";
 };
 
-/* -----------------------------------------------------------
- * I2C22 bus -> P1.11 (SCL), P1.10 (SDA)
- * ----------------------------------------------------------- */
 &i2c22 {
     status = "okay";
     clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -61,16 +55,22 @@
         status = "okay";
     };
 
-    /* SEN50 - no Zephyr driver, accessed via raw I2C API */
     sen50_0: sen50@69 {
         reg = <0x69>;
         status = "okay";
     };
+
+    bmp388_0: bmp388@77 {
+        compatible = "bosch,bmp388";
+        reg = <0x77>;
+        status = "okay";
+        odr = "12.5";         /* 12.5 Hz - plenty for 60-second cycles */
+        osr-press = <16>;
+        osr-temp = <2>;
+        iir-filter = <3>;
+    };
 };
 
-/* -----------------------------------------------------------
- * Pinctrl for I2C22
- * ----------------------------------------------------------- */
 &pinctrl {
     /omit-if-no-ref/ i2c22_default: i2c22_default {
         group1 {

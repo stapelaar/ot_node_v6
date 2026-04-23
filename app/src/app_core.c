@@ -18,6 +18,14 @@
 #include "sen50.h"
 #endif
 
+#if IS_ENABLED(CONFIG_APP_USE_DSMR_SENSOR)
+#include "dsmr.h"
+#endif
+
+#if IS_ENABLED(CONFIG_APP_USE_BMP388_SENSOR)
+#include "bmp388.h"
+#endif
+
 #if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR) || IS_ENABLED(CONFIG_APP_USE_MAX31850_SENSOR)
 #define APP_HAS_ONEWIRE 1
 #include "onewire_inventory.h"
@@ -50,11 +58,9 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
     ARG_UNUSED(arg2);
     ARG_UNUSED(arg3);
 
-    /* Let Thread settle before first measurement */
     k_msleep(5000);
 
 #if APP_HAS_ONEWIRE
-    /* One-time 1-Wire bus scan - enables every configured family */
     if (device_is_ready(w1_bus)) {
         int rc = ow_inventory_scan(&ow_inv, w1_bus,
                                    IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR),
@@ -81,6 +87,14 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
 
 #if IS_ENABLED(CONFIG_APP_USE_SEN50_SENSOR)
         sen50_sample_and_publish(app_node_name());
+#endif
+
+#if IS_ENABLED(CONFIG_APP_USE_DSMR_SENSOR)
+        dsmr_sample_and_publish(app_node_name());
+#endif
+
+#if IS_ENABLED(CONFIG_APP_USE_BMP388_SENSOR)
+        bmp388_sample_and_publish(app_node_name());
 #endif
 
 #if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR)
