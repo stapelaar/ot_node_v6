@@ -44,6 +44,10 @@ config APP_USE_BMP388_SENSOR
     bool "Use BMP388 sensor (I2C pressure/temperature)"
     default n
 
+config APP_USE_WATERMETER_SENSOR
+    bool "Use watermeter (GPIO pulse counter via inductive sensor)"
+    default n
+
 config APP_NODE_ID
     string "Node ID (e.g. 12 -> ND12)"
     default "00"

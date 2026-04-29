@@ -26,6 +26,10 @@
 #include "bmp388.h"
 #endif
 
+#if IS_ENABLED(CONFIG_APP_USE_WATERMETER_SENSOR)
+#include "watermeter.h"
+#endif
+
 #if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR) || IS_ENABLED(CONFIG_APP_USE_MAX31850_SENSOR)
 #define APP_HAS_ONEWIRE 1
 #include "onewire_inventory.h"
@@ -95,6 +99,10 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
 
 #if IS_ENABLED(CONFIG_APP_USE_BMP388_SENSOR)
         bmp388_sample_and_publish(app_node_name());
+#endif
+
+#if IS_ENABLED(CONFIG_APP_USE_WATERMETER_SENSOR)
+        watermeter_sample_and_publish(app_node_name());
 #endif
 
 #if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR)

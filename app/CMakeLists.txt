@@ -38,7 +38,10 @@ if(CONFIG_APP_USE_BMP388_SENSOR)
     target_sources(app PRIVATE src/sensors/bmp388.c)
 endif()
 
-# 1-Wire shared inventory compiled once when any 1-Wire sensor is enabled
+if(CONFIG_APP_USE_WATERMETER_SENSOR)
+    target_sources(app PRIVATE src/sensors/watermeter.c)
+endif()
+
 if(CONFIG_APP_USE_DS18B20_SENSOR OR CONFIG_APP_USE_MAX31850_SENSOR)
     target_sources(app PRIVATE src/sensors/onewire_inventory.c)
 endif()
