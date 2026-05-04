@@ -5,7 +5,10 @@ LOG_MODULE_REGISTER(coap_client, LOG_LEVEL_INF);
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/coap.h>
+#include <zephyr/net/openthread.h>
 #include <zephyr/random/random.h>
+#include <openthread/nat64.h>
+#include <openthread/instance.h>
 #include <string.h>
 #include <errno.h>
 
@@ -14,26 +17,74 @@ LOG_MODULE_REGISTER(coap_client, LOG_LEVEL_INF);
 #define COAP_BUF_SIZE  192
 #define PAYLOAD_SIZE    96
 
-static char s_target[INET6_ADDRSTRLEN] = "fd84:3760:18a6:cec7:b222:7aff:fee7:5602";
-static uint16_t s_port = 5684;
+/* Broker IPv4 address comes from Kconfig at build time.
+ * Default in Kconfig is 192.168.1.5 - override per node if needed. */
+#ifndef CONFIG_APP_BROKER_IPV4
+#define CONFIG_APP_BROKER_IPV4 "192.168.1.5"
+#endif
+
+#ifndef CONFIG_APP_BROKER_PORT
+#define CONFIG_APP_BROKER_PORT 5684
+#endif
 
 static int s_sock = -1;
 
-/* ── Get the Thread network interface index ─────────────────────────────── */
+/* Cached synthesized IPv6 - re-resolved if a publish fails or socket is reopened. */
+static char s_target_str[INET6_ADDRSTRLEN] = {0};
 
+/* ── Get the Thread network interface index ─────────────────────────────── */
 static int get_ot_iface_index(void)
 {
-    /* OpenThread L2 interface is always the first (and usually only)
-       IEEE 802.15.4 interface. Walk all interfaces and find it. */
     struct net_if *iface = net_if_get_default();
     if (iface) {
         return net_if_get_by_iface(iface);
     }
-    return 1; /* fallback: interface 1 */
+    return 1;
+}
+
+/* ── Synthesize IPv6 address for the configured broker IPv4 ──────────────
+ * Calls OpenThread's NAT64 helper which uses the prefix advertised by the
+ * Border Router. This way an OTBR reboot (with a new prefix) is handled
+ * transparently - we just re-resolve. */
+static int synthesize_broker_ipv6(char *out, size_t out_sz)
+{
+    otIp4Address ip4 = {0};
+
+    /* Parse "a.b.c.d" into otIp4Address bytes */
+    int a, b, c, d;
+    if (sscanf(CONFIG_APP_BROKER_IPV4, "%d.%d.%d.%d", &a, &b, &c, &d) != 4) {
+        LOG_ERR("Bad APP_BROKER_IPV4 '%s'", CONFIG_APP_BROKER_IPV4);
+        return -EINVAL;
+    }
+    ip4.mFields.m8[0] = (uint8_t)a;
+    ip4.mFields.m8[1] = (uint8_t)b;
+    ip4.mFields.m8[2] = (uint8_t)c;
+    ip4.mFields.m8[3] = (uint8_t)d;
+
+    otInstance *inst = openthread_get_default_instance();
+    if (!inst) {
+        LOG_ERR("OpenThread instance not available");
+        return -ENODEV;
+    }
+
+    otIp6Address ip6 = {0};
+    otError err = otNat64SynthesizeIp6Address(inst, &ip4, &ip6);
+    if (err != OT_ERROR_NONE) {
+        LOG_ERR("otNat64SynthesizeIp6Address failed: %d (NAT64 prefix not yet known?)",
+                (int)err);
+        return -ENETUNREACH;
+    }
+
+    /* Convert to printable form for sockaddr_in6 inet_pton round trip */
+    if (zsock_inet_ntop(AF_INET6, &ip6, out, out_sz) == NULL) {
+        LOG_ERR("inet_ntop failed");
+        return -EINVAL;
+    }
+
+    return 0;
 }
 
 /* ── Socket open ────────────────────────────────────────────────────────── */
-
 static int coap_open(void)
 {
     if (s_sock >= 0) {
@@ -52,14 +103,25 @@ static int coap_open(void)
 
 int coap_client_init(const char *target, uint16_t port)
 {
-    if (target && *target) strncpy(s_target, target, sizeof(s_target) - 1);
-    if (port) s_port = port;
+    /* target/port from caller are ignored - we always use Kconfig + NAT64 */
+    ARG_UNUSED(target);
+    ARG_UNUSED(port);
 
     int rc = coap_open();
-    if (rc == 0) {
-        LOG_INF("CoAP ready (Zephyr socket) -> target %s:%d", s_target, s_port);
+    if (rc != 0) {
+        return rc;
     }
-    return rc;
+
+    /* Try to resolve broker IPv6 once at init for an early visibility log */
+    rc = synthesize_broker_ipv6(s_target_str, sizeof(s_target_str));
+    if (rc == 0) {
+        LOG_INF("CoAP ready -> broker IPv4 %s synthesized to [%s]:%d",
+                CONFIG_APP_BROKER_IPV4, s_target_str, CONFIG_APP_BROKER_PORT);
+    } else {
+        LOG_WRN("CoAP socket open, but NAT64 synthesis not ready yet (rc=%d)", rc);
+        /* That's OK - we'll try again on first publish */
+    }
+    return 0;
 }
 
 bool coap_client_ready(void) { return s_sock >= 0; }
@@ -74,6 +136,13 @@ int coap_client_post_mqttlike(const char *uri_path, const char *topic, const cha
 
     if (s_sock < 0) {
         if (coap_client_init(NULL, 0) != 0) return -EIO;
+    }
+
+    /* Always re-resolve target on every publish. NAT64 prefix may have
+     * changed if the OTBR rebooted; the cost is one cheap function call. */
+    int rc = synthesize_broker_ipv6(s_target_str, sizeof(s_target_str));
+    if (rc < 0) {
+        return rc;
     }
 
     /* Build payload and CoAP packet */
@@ -106,16 +175,14 @@ int coap_client_post_mqttlike(const char *uri_path, const char *topic, const cha
     coap_packet_append_payload_marker(&req);
     coap_packet_append_payload(&req, payload, strlen(payload));
 
-    /* Set destination with scope_id pointing to the Thread interface.
-       Without this, Zephyr cannot route to addresses on foreign prefixes. */
     struct sockaddr_in6 dst = {
         .sin6_family   = AF_INET6,
-        .sin6_port     = htons(s_port),
+        .sin6_port     = htons(CONFIG_APP_BROKER_PORT),
         .sin6_scope_id = (uint32_t)get_ot_iface_index(),
     };
 
-    if (zsock_inet_pton(AF_INET6, s_target, &dst.sin6_addr) != 1) {
-        LOG_ERR("Invalid target address: %s", s_target);
+    if (zsock_inet_pton(AF_INET6, s_target_str, &dst.sin6_addr) != 1) {
+        LOG_ERR("Invalid synthesized address: %s", s_target_str);
         return -EINVAL;
     }
 

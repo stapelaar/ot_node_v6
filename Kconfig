@@ -57,6 +57,19 @@ config APP_MEASUREMENT_PERIOD_S
     default 60
     range 1 86400
 
+config APP_BROKER_IPV4
+    string "Broker IPv4 address (CoAP-MQTT bridge)"
+    default "192.168.1.5"
+    help
+      IPv4 address of the broker host running the CoAP-MQTT bridge.
+      Resolved at runtime to its synthesized IPv6 address using the
+      OTBR's NAT64 prefix - so this stays valid across OTBR reboots.
+
+config APP_BROKER_PORT
+    int "Broker UDP port"
+    default 5684
+    range 1 65535
+
 config APP_COAP_ACK_TIMEOUT_MS
     int "CoAP ACK initial timeout (ms)"
     default 800
