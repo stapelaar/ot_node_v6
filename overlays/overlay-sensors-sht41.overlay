@@ -1,0 +1,4 @@
+// Sensor overlay: SHT41 only — disables scd41, bmp388
+// Used by: ND12
+&scd41_0  { status = "disabled"; };
+&bmp388_0 { status = "disabled"; };

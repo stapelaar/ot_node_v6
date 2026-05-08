@@ -1,0 +1,5 @@
+// Sensor overlay: no I2C sensors — disables sht41, scd41, bmp388
+// Used by: ND30, ND140, ND143
+&sht4x0   { status = "disabled"; };
+&scd41_0  { status = "disabled"; };
+&bmp388_0 { status = "disabled"; };
