@@ -11,12 +11,16 @@ BOARD="xiao_nrf54l15/nrf54l15/cpuapp"
 NODE=""
 EXTRA_OVERLAYS=""
 BUILD_TYPE="pristine"   # or "incremental"
+BATTERY_MODE=0
 
 APP_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 # Always-on overlays
 ALWAYS_54L15="${APP_DIR}/overlays/overlay-54l15.conf"
 ALWAYS_OT_BASIS="${APP_DIR}/overlays/overlay-OT-network-basis.conf"
+
+# Battery deployment overlay (disables UART — required for cold-boot on battery, XIAO v1.0 hw bug)
+BATTERY_OVERLAY="${APP_DIR}/overlays/overlay-battery.conf"
 
 # Board devicetree overlay (must be explicit when using DTC_OVERLAY_FILE)
 BOARD_DTS="${APP_DIR}/boards/xiao_nrf54l15_nrf54l15_cpuapp.overlay"
@@ -44,10 +48,12 @@ usage() {
     cat <<EOF
 
 Usage:
-  ./build-xiao.sh --node NDxx [--overlays <list>] [--no-pristine]
+  ./build-xiao.sh --node NDxx [--battery] [--overlays <list>] [--no-pristine]
 
 Options:
   --node NDxx        Node config (from nodes/NDxx.conf)
+  --battery          Battery deployment build: disables UART/Serial
+                     Required for cold-boot on battery (XIAO nRF54L15 v1.0 hw limitation)
   --overlays list    Extra overlay(s), semicolon separated
   --no-pristine      Incremental build (don't wipe build dir)
   -h, --help         Show this help
@@ -67,6 +73,7 @@ Notes:
         CONFIG_APP_USE_SEN50_SENSOR=y                  → overlay-sensors-sen50.overlay
         CONFIG_APP_USE_BMP388_SENSOR=y                 → overlay-sensors-bmp388.overlay
         none of the above                              → overlay-sensors-none.overlay
+  * --battery adds overlay-battery.conf last (disables UART, enables RTT)
   * Node config ALWAYS wins last.
 EOF
 }
@@ -80,6 +87,10 @@ while [[ $# -gt 0 ]]; do
         --node)
             NODE="${2:-}"
             shift 2
+            ;;
+        --battery)
+            BATTERY_MODE=1
+            shift
             ;;
         --overlays)
             EXTRA_OVERLAYS="${2:-}"
@@ -109,6 +120,11 @@ fi
 NODE_CONF="${APP_DIR}/nodes/${NODE}.conf"
 if [[ ! -f "$NODE_CONF" ]]; then
     echo -e "${RED}ERROR:${RST} Node config ontbreekt: ${NODE_CONF}"
+    exit 1
+fi
+
+if [[ $BATTERY_MODE -eq 1 && ! -f "$BATTERY_OVERLAY" ]]; then
+    echo -e "${RED}ERROR:${RST} Battery overlay ontbreekt: ${BATTERY_OVERLAY}"
     exit 1
 fi
 
@@ -172,21 +188,33 @@ fi
 
 OVERLAY_CONFIG="${OVERLAY_CONFIG};${ROLE_OVERLAY};${NODE_CONF}"
 
+# Battery overlay goes last so it always wins over node conf
+if [[ $BATTERY_MODE -eq 1 ]]; then
+    OVERLAY_CONFIG="${OVERLAY_CONFIG};${BATTERY_OVERLAY}"
+fi
+
 # DTC_OVERLAY_FILE: board overlay first, then sensor overlay
 # Board overlay must be explicit because DTC_OVERLAY_FILE disables auto-detection
 DTC_OVERLAYS="${BOARD_DTS};${SENSOR_OVERLAY}"
 
 # =============================================================
-# Build directory
+# Build directory — separate dir for battery builds
 # =============================================================
 
-BUILD_DIR="${APP_DIR}/build/${NODE}"
+if [[ $BATTERY_MODE -eq 1 ]]; then
+    BUILD_DIR="${APP_DIR}/build/${NODE}-battery"
+else
+    BUILD_DIR="${APP_DIR}/build/${NODE}"
+fi
 mkdir -p "$BUILD_DIR"
 
 echo -e "${CYN}---------------------------------------${RST}"
 echo -e "${GRN}Building node       :${RST} $NODE"
 echo -e "${GRN}Role overlay        :${RST} $(basename "$ROLE_OVERLAY")"
 echo -e "${GRN}Sensor overlay      :${RST} $(basename "$SENSOR_OVERLAY")"
+if [[ $BATTERY_MODE -eq 1 ]]; then
+echo -e "${YLW}Battery mode        :${RST} YES — UART disabled"
+fi
 echo -e "${GRN}Board               :${RST} $BOARD"
 echo -e "${GRN}Overlays            :${RST} $OVERLAY_CONFIG"
 echo -e "${GRN}DTC overlays        :${RST} $DTC_OVERLAYS"
