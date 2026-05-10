@@ -12,10 +12,13 @@ target_sources(app PRIVATE
     src/main.c
     src/app_core.c
     src/app_antenna.c
+    src/app_settings.c
     src/thread_mgr.c
     src/util/topic.c
     src/transport/transport.c
     src/transport/coap_client.c
+    src/node_cmd.c
+    src/shell_utils.c
 )
 
 if(CONFIG_APP_USE_SHT41_SENSOR)

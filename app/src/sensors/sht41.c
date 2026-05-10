@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(sht41, LOG_LEVEL_INF);
 #error "SHT41 devicetree node 'sht4x0' missing or not OK"
 #endif
 
+
+
 static const struct device *const sht = DEVICE_DT_GET(SHT_NODE);
 
 static inline int32_t to_centi(const struct sensor_value *v)
@@ -82,3 +84,4 @@ void sht41_sample_and_publish(const char *root)
     publish_field(root, "SHT41-1", "TEMP", t_centi);
     publish_field(root, "SHT41-1", "RH",   rh_centi);
 }
+

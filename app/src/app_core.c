@@ -5,6 +5,8 @@
 
 #include "app_core.h"
 #include "app_node.h"
+#include "app_settings.h"
+#include "node_cmd.h"
 
 #if IS_ENABLED(CONFIG_APP_USE_SHT41_SENSOR)
 #include "sht41.h"
@@ -79,7 +81,8 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
 
     while (1) {
         counter++;
-        LOG_INF("Cycle %d - start", counter);
+        uint32_t interval_s = app_settings_get_interval_s();
+        LOG_INF("Cycle %d - start (interval=%us)", counter, interval_s);
 
 #if IS_ENABLED(CONFIG_APP_USE_SHT41_SENSOR)
         sht41_sample_and_publish(app_node_name());
@@ -117,9 +120,12 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
         }
 #endif
 
+        /* Poll voor inkomende commando's na elke publish cyclus */
+        node_cmd_poll(app_node_name());
+
         LOG_INF("Cycle %d - done", counter);
 
-        k_msleep(CONFIG_APP_MEASUREMENT_PERIOD_S * 1000);
+        k_msleep(interval_s * 1000);
     }
 }
 
