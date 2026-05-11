@@ -203,10 +203,59 @@ static int cmd_th_mode(const struct shell *sh, size_t argc, char **argv)
     return (int)err;
 }
 
+static int cmd_th_join(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc); ARG_UNUSED(argv);
+    otInstance *inst = openthread_get_default_instance();
+    if (!inst) { shell_error(sh, "no OT instance"); return -ENODEV; }
+
+    /* Stop Thread first if running */
+    otThreadSetEnabled(inst, false);
+    otIp6SetEnabled(inst, false);
+
+    otOperationalDataset ds = {0};
+
+    ds.mPanId = 0x2410;
+    ds.mComponents.mIsPanIdPresent = true;
+
+    ds.mChannel = 26;
+    ds.mComponents.mIsChannelPresent = true;
+
+    strncpy(ds.mNetworkName.m8, "OT-MANNAH", OT_NETWORK_NAME_MAX_SIZE);
+    ds.mComponents.mIsNetworkNamePresent = true;
+
+    const uint8_t key[] = {
+        0x6a, 0xc2, 0x56, 0xfa, 0x94, 0x4d, 0xd2, 0x8b,
+        0x7f, 0x9a, 0x64, 0x1d, 0x84, 0x49, 0xed, 0xd9
+    };
+    memcpy(ds.mNetworkKey.m8, key, OT_NETWORK_KEY_SIZE);
+    ds.mComponents.mIsNetworkKeyPresent = true;
+
+    otError err = otDatasetSetActive(inst, &ds);
+    if (err != OT_ERROR_NONE) {
+        shell_error(sh, "dataset set failed: %d", err);
+        return -EIO;
+    }
+
+    err = otIp6SetEnabled(inst, true);
+    if (err != OT_ERROR_NONE) {
+        shell_error(sh, "ifconfig up failed: %d", err);
+        return -EIO;
+    }
+
+    err = otThreadSetEnabled(inst, true);
+    if (err != OT_ERROR_NONE) {
+        shell_error(sh, "thread start failed: %d", err);
+        return -EIO;
+    }
+
+    shell_print(sh, "Joining OT-MANNAH (ch26, panid=0x2410)...");
+    return 0;
+}
+
 static int cmd_th_scan(const struct shell *sh, size_t argc, char **argv)
 {
     ARG_UNUSED(argc); ARG_UNUSED(argv);
-    /* Energy scan op alle kanalen */
     otInstance *inst = openthread_get_default_instance();
     if (!inst) { shell_error(sh, "no OT instance"); return -ENODEV; }
 
@@ -248,16 +297,9 @@ static int cmd_th_cheat(const struct shell *sh, size_t argc, char **argv)
     shell_print(sh, "  th neigh               — neighbors");
     shell_print(sh, "  th poll [ms]           — poll periode tonen/zetten");
     shell_print(sh, "  th mode [sed|med]      — link mode tonen/zetten");
+    shell_print(sh, "  th join                — join OT-MANNAH (1 commando)");
     shell_print(sh, "  th scan                — energy scan kanalen 11-26");
     shell_print(sh, "  th mon                 — channel monitor occupancy");
-    shell_print(sh, "Commission (nieuw netwerk):");
-    shell_print(sh, "  ot dataset clear");
-    shell_print(sh, "  ot dataset panid 0x2410");
-    shell_print(sh, "  ot dataset networkkey 6ac256fa944dd28b7f9a641d8449edd9");
-    shell_print(sh, "  ot dataset channel 26");
-    shell_print(sh, "  ot dataset networkname OT-MANNAH");
-    shell_print(sh, "  ot dataset commit active");
-    shell_print(sh, "  ot ifconfig up && ot thread start");
     return 0;
 }
 
@@ -268,6 +310,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_th,
     SHELL_CMD(neigh,  NULL, "Neighbors",                         cmd_th_neigh),
     SHELL_CMD_ARG(poll, NULL, "poll [ms]",                       cmd_th_poll, 1, 1),
     SHELL_CMD_ARG(mode, NULL, "mode [sed|med]",                  cmd_th_mode, 1, 1),
+    SHELL_CMD(join,   NULL, "Join OT-MANNAH netwerk",            cmd_th_join),
     SHELL_CMD(scan,   NULL, "Energy scan kanalen 11-26",         cmd_th_scan),
     SHELL_CMD(mon,    NULL, "Channel monitor occupancy",         cmd_th_mon),
     SHELL_CMD(cheat,  NULL, "Cheatsheet",                        cmd_th_cheat),
@@ -324,7 +367,7 @@ static int cmd_node_calibrate(const struct shell *sh, size_t argc, char **argv)
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_node,
-    SHELL_CMD(reset,    NULL, "Reboot de node",                     cmd_node_reset),
+    SHELL_CMD(reset,    NULL, "Reboot de node",                          cmd_node_reset),
     SHELL_CMD_ARG(interval, NULL, "interval [s] — toon/stel meetinterval", cmd_node_interval, 1, 1),
 #if IS_ENABLED(CONFIG_APP_USE_SCD41_SENSOR)
     SHELL_CMD_ARG(calibrate, NULL, "calibrate [ppm] — SCD41 FRC (default 420)", cmd_node_calibrate, 1, 1),
