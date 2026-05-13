@@ -79,6 +79,16 @@ config APP_COAP_RETRIES
     int "CoAP CON retries"
     default 3
     range 0 8
+    
+config APP_USE_BATT_SENSOR
+	bool "Enable battery voltage sensor (ADC P1.14/AIN7, VBAT_EN P1.15)"
+	default n
+	select ADC
+	help
+	  Reads LiPo battery voltage via onboard voltage divider (P1.14/AIN7).
+	  Enables P1.15 (VBAT_EN) briefly during each measurement.
+	  Publishes NDxx/OUT/BATT/MV (millivolt) and NDxx/OUT/BATT/PCT (percent).
+
 
 endmenu
 

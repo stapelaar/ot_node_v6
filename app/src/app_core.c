@@ -45,6 +45,10 @@
 #include "max31850.h"
 #endif
 
+#if IS_ENABLED(CONFIG_APP_USE_BATT_SENSOR)
+#include "batt.h"
+#endif
+
 LOG_MODULE_REGISTER(app_core, LOG_LEVEL_INF);
 
 static bool thread_attached;
@@ -118,6 +122,10 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
         if (ow_scanned) {
             max31850_sample_and_publish(app_node_name(), &ow_inv);
         }
+#endif
+
+#if IS_ENABLED(CONFIG_APP_USE_BATT_SENSOR)
+    batt_sample_and_publish(app_node_name());
 #endif
 
         /* Poll voor inkomende commando's na elke publish cyclus */

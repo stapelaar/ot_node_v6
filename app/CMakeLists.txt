@@ -19,6 +19,7 @@ target_sources(app PRIVATE
     src/transport/coap_client.c
     src/node_cmd.c
     src/shell_utils.c
+
 )
 
 if(CONFIG_APP_USE_SHT41_SENSOR)
@@ -55,4 +56,8 @@ endif()
 
 if(CONFIG_APP_USE_MAX31850_SENSOR)
     target_sources(app PRIVATE src/sensors/max31850.c)
+endif()
+
+if(CONFIG_APP_USE_BATT_SENSOR)
+    target_sources(app PRIVATE src/sensors/batt.c)
 endif()
