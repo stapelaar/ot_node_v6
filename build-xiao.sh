@@ -145,4 +145,29 @@ else
 fi
 
 popd >/dev/null
+
+# Kopieer OTBR sdkconfig files naar repo
+OTBR_RCP_SRC="/Users/hstapelberg/esp-idf/v6.0.1/esp-idf/examples/openthread/ot_rcp/sdkconfig"
+OTBR_BR_SRC="/Users/hstapelberg/esp-thread-br/examples/basic_thread_border_router/sdkconfig"
+OTBR_DST="${APP_DIR}/otbr"
+
+mkdir -p "${OTBR_DST}/rcp" "${OTBR_DST}/br"
+
+if [[ -f "$OTBR_RCP_SRC" ]]; then
+    cp "$OTBR_RCP_SRC" "${OTBR_DST}/rcp/sdkconfig"
+    echo -e "${GRN}✔ OTBR RCP sdkconfig gekopieerd.${RST}"
+else
+    echo -e "${RED}⚠ OTBR RCP sdkconfig niet gevonden: ${OTBR_RCP_SRC}${RST}"
+fi
+
+if [[ -f "$OTBR_BR_SRC" ]]; then
+    cp "$OTBR_BR_SRC" "${OTBR_DST}/br/sdkconfig"
+    echo -e "${GRN}✔ OTBR BR sdkconfig gekopieerd.${RST}"
+else
+    echo -e "${RED}⚠ OTBR BR sdkconfig niet gevonden: ${OTBR_BR_SRC}${RST}"
+fi
+
+
+
+
 echo -e "${GRN}✔ Build voltooid voor node ${NODE}.${RST}"
