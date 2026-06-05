@@ -1,0 +1,46 @@
+/* Sensor overlay: MAX31856 SPI thermocouple via bitbang
+ *   P2.01 = SCK  (D8)
+ *   P2.02 = MOSI (D10)
+ *   P2.04 = MISO (D9)
+ *   P1.04 = CS1  (D0)  — software CS
+ *   P1.05 = CS2  (D1)  — software CS
+ */
+
+&spi00 {
+    status = "disabled";
+};
+
+&sht4x0   { status = "disabled"; };
+&scd41_0  { status = "disabled"; };
+&bmp388_0 { status = "disabled"; };
+
+/ {
+    spi_bb: spi_bitbang {
+        compatible = "zephyr,spi-bitbang";
+        status = "okay";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        clk-gpios  = <&gpio2 1 GPIO_ACTIVE_HIGH>;
+        mosi-gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
+        miso-gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+        cs-gpios   = <&gpio1 4 GPIO_ACTIVE_LOW>,
+                     <&gpio1 5 GPIO_ACTIVE_LOW>;
+
+        max31856_0: max31856@0 {
+            compatible = "vnd,spi-device";
+            reg = <0>;
+            spi-max-frequency = <1000000>;
+        };
+
+        max31856_1: max31856@1 {
+            compatible = "vnd,spi-device";
+            reg = <1>;
+            spi-max-frequency = <1000000>;
+        };
+    };
+
+    aliases {
+        max31856-0 = &max31856_0;
+        max31856-1 = &max31856_1;
+    };
+};

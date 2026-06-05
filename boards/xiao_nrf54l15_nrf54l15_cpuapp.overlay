@@ -106,6 +106,8 @@
             low-power-enable;
         };
     };
+   
+ 
 };
 
 &adc {

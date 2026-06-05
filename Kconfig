@@ -31,6 +31,15 @@ config APP_USE_DS18B20_SENSOR
 config APP_USE_MAX31850_SENSOR
     bool "Use MAX31850 sensor (1-Wire thermocouple)"
     default n
+    
+config APP_USE_MAX31856_SENSOR
+	bool "Enable MAX31856 SPI thermocouple sensor(s)"
+	default n
+	select SPI
+	help
+	  Reads K-type thermocouple temperature via MAX31856 over SPI.
+	  Supports up to 4 sensors via aliases max31856-0 .. max31856-3.
+	  Publishes NDxx/OUT/MAX31856-N/TEMP, /CJ and /FAULT.
 
 config APP_USE_SEN50_SENSOR
     bool "Use SEN50 sensor (I2C particulate matter)"

@@ -45,6 +45,10 @@
 #include "max31850.h"
 #endif
 
+#if IS_ENABLED(CONFIG_APP_USE_MAX31856_SENSOR)
+#include "max31856.h"
+#endif
+
 #if IS_ENABLED(CONFIG_APP_USE_BATT_SENSOR)
 #include "batt.h"
 #endif
@@ -59,7 +63,7 @@ static struct ow_inventory ow_inv;
 static bool ow_scanned;
 #endif
 
-K_THREAD_STACK_DEFINE(sample_stack, 8192);
+K_THREAD_STACK_DEFINE(sample_stack, 24576);
 static struct k_thread sample_thread;
 
 static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
@@ -124,8 +128,12 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
         }
 #endif
 
+#if IS_ENABLED(CONFIG_APP_USE_MAX31856_SENSOR)
+        max31856_sample_and_publish(app_node_name());
+#endif
+
 #if IS_ENABLED(CONFIG_APP_USE_BATT_SENSOR)
-    batt_sample_and_publish(app_node_name());
+        batt_sample_and_publish(app_node_name());
 #endif
 
         /* Poll voor inkomende commando's na elke publish cyclus */
