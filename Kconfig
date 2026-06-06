@@ -37,9 +37,19 @@ config APP_USE_MAX31856_SENSOR
 	default n
 	select SPI
 	help
-	  Reads K-type thermocouple temperature via MAX31856 over SPI.
+	  Reads K-type thermocouple temperature via MAX31856 over SPI (bitbang).
 	  Supports up to 4 sensors via aliases max31856-0 .. max31856-3.
 	  Publishes NDxx/OUT/MAX31856-N/TEMP, /CJ and /FAULT.
+
+config APP_MAX31856_COUNT
+	int "Number of MAX31856 sensors"
+	default 2
+	range 1 4
+	depends on APP_USE_MAX31856_SENSOR
+	help
+	  Number of MAX31856 thermocouple sensors on the SPI bus.
+	  Only sensors 1..N will be initialized and published.
+
 
 config APP_USE_SEN50_SENSOR
     bool "Use SEN50 sensor (I2C particulate matter)"

@@ -37,15 +37,21 @@ LOG_MODULE_REGISTER(max31856, LOG_LEVEL_INF);
 
 /* ── CS GPIO pins — software CS ─────────────────────────────────────────── */
 static const struct gpio_dt_spec cs_pins[] = {
-    GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(spi_bb), cs_gpios, 0),  /* CS1 P1.04 */
-    GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(spi_bb), cs_gpios, 1),  /* CS2 P1.05 */
+    GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(spi_bb), cs_gpios, 0),
+    GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(spi_bb), cs_gpios, 1),
+#if CONFIG_APP_MAX31856_COUNT > 2
+    GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(spi_bb), cs_gpios, 2),
+#endif
+#if CONFIG_APP_MAX31856_COUNT > 3
+    GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(spi_bb), cs_gpios, 3),
+#endif
 };
 
 /* ── Sensor struct ──────────────────────────────────────────────────────── */
 struct max31856_sensor {
     const struct device *spi_dev;
     struct spi_config    spi_cfg;
-    int  cs_idx;  /* index into cs_pins[] */
+    int  cs_idx;
     bool valid;
     int  index;
 };
@@ -60,9 +66,7 @@ static struct max31856_sensor sensors[] = {
             .slave     = 0,
             .cs        = { .gpio = { 0 }, .delay = 0 },
         },
-        .cs_idx = 0,
-        .valid  = true,
-        .index  = 1,
+        .cs_idx = 0, .valid = true, .index = 1,
     },
 #endif
 #if DT_NODE_EXISTS(DT_ALIAS(max31856_1))
@@ -74,9 +78,7 @@ static struct max31856_sensor sensors[] = {
             .slave     = 1,
             .cs        = { .gpio = { 0 }, .delay = 0 },
         },
-        .cs_idx = 1,
-        .valid  = true,
-        .index  = 2,
+        .cs_idx = 1, .valid = true, .index = 2,
     },
 #endif
 #if DT_NODE_EXISTS(DT_ALIAS(max31856_2))
@@ -88,9 +90,7 @@ static struct max31856_sensor sensors[] = {
             .slave     = 2,
             .cs        = { .gpio = { 0 }, .delay = 0 },
         },
-        .cs_idx = 2,
-        .valid  = true,
-        .index  = 3,
+        .cs_idx = 2, .valid = true, .index = 3,
     },
 #endif
 #if DT_NODE_EXISTS(DT_ALIAS(max31856_3))
@@ -102,14 +102,13 @@ static struct max31856_sensor sensors[] = {
             .slave     = 3,
             .cs        = { .gpio = { 0 }, .delay = 0 },
         },
-        .cs_idx = 3,
-        .valid  = true,
-        .index  = 4,
+        .cs_idx = 3, .valid = true, .index = 4,
     },
 #endif
 };
 
-#define NUM_SENSORS ARRAY_SIZE(sensors)
+/* Limit to configured count */
+#define NUM_SENSORS MIN((int)ARRAY_SIZE(sensors), CONFIG_APP_MAX31856_COUNT)
 
 /* ── CS helpers ─────────────────────────────────────────────────────────── */
 static inline void cs_assert(struct max31856_sensor *s)
@@ -155,7 +154,6 @@ static int read_regs(struct max31856_sensor *s, uint8_t reg,
 /* ── Init ───────────────────────────────────────────────────────────────── */
 static int sensor_init(struct max31856_sensor *s)
 {
-    /* Configure CS pin as output inactive (high) */
     int rc = gpio_pin_configure_dt(&cs_pins[s->cs_idx], GPIO_OUTPUT_INACTIVE);
     if (rc) { LOG_ERR("MAX31856-%d: CS config failed %d", s->index, rc); return rc; }
 
@@ -246,7 +244,7 @@ static bool initialized;
 void max31856_sample_and_publish(const char *root)
 {
     if (!initialized) {
-        for (size_t i = 0; i < NUM_SENSORS; i++) {
+        for (int i = 0; i < NUM_SENSORS; i++) {
             if (sensors[i].valid) {
                 sensor_init(&sensors[i]);
             }
@@ -255,7 +253,7 @@ void max31856_sample_and_publish(const char *root)
         initialized = true;
     }
 
-    for (size_t i = 0; i < NUM_SENSORS; i++) {
+    for (int i = 0; i < NUM_SENSORS; i++) {
         struct max31856_sensor *s = &sensors[i];
         if (!s->valid) continue;
 
