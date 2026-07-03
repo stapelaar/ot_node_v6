@@ -2,8 +2,12 @@
  *   P2.01 = SCK  (D8)
  *   P2.02 = MOSI (D10)
  *   P2.04 = MISO (D9)
- *   P1.04 = CS1  (D0)  — software CS
- *   P1.05 = CS2  (D1)  — software CS
+ *   P1.04 = CS1  (D0)  — sensor 1
+ *   P1.05 = CS2  (D1)  — sensor 2
+ *   P1.06 = CS3  (D2)  — sensor 3
+ *   P1.07 = CS4  (D3)  — sensor 4
+ *
+ * Aantal actieve sensoren via CONFIG_APP_MAX31856_COUNT in node conf.
  */
 
 &spi00 {
@@ -24,7 +28,9 @@
         mosi-gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
         miso-gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
         cs-gpios   = <&gpio1 4 GPIO_ACTIVE_LOW>,
-                     <&gpio1 5 GPIO_ACTIVE_LOW>;
+                     <&gpio1 5 GPIO_ACTIVE_LOW>,
+                     <&gpio1 6 GPIO_ACTIVE_LOW>,
+                     <&gpio1 7 GPIO_ACTIVE_LOW>;
 
         max31856_0: max31856@0 {
             compatible = "vnd,spi-device";
@@ -37,10 +43,24 @@
             reg = <1>;
             spi-max-frequency = <1000000>;
         };
+
+        max31856_2: max31856@2 {
+            compatible = "vnd,spi-device";
+            reg = <2>;
+            spi-max-frequency = <1000000>;
+        };
+
+        max31856_3: max31856@3 {
+            compatible = "vnd,spi-device";
+            reg = <3>;
+            spi-max-frequency = <1000000>;
+        };
     };
 
     aliases {
         max31856-0 = &max31856_0;
         max31856-1 = &max31856_1;
+        max31856-2 = &max31856_2;
+        max31856-3 = &max31856_3;
     };
 };
