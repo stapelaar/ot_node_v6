@@ -16,7 +16,7 @@
 
 &sht4x0   { status = "disabled"; };
 &scd41_0  { status = "disabled"; };
-&bmp388_0 { status = "disabled"; };
+&bmp390_0 { status = "disabled"; };
 
 / {
     spi_bb: spi_bitbang {

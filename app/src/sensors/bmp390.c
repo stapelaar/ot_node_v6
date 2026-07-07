@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(bmp390, LOG_LEVEL_INF);
 /* De BMP390 is register-compatibel met de BMP388 en gebruikt
  * dezelfde Zephyr driver (bosch,bmp388 compatible, CONFIG_BMP388).
  * Chip ID 0x60 (BMP390) wordt door de driver geaccepteerd. */
-#define BMP390_NODE  DT_COMPAT_GET_ANY_STATUS_OKAY(bosch_bmp388)
+#define BMP390_NODE  DT_COMPAT_GET_ANY_STATUS_OKAY(bosch_bmp390)
 
 #if !DT_NODE_EXISTS(BMP390_NODE)
 #error "No enabled bosch,bmp388 node in devicetree (BMP390 uses this compatible)"

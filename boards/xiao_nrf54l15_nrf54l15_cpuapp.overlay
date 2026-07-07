@@ -80,15 +80,17 @@
         status = "okay";
     };
 
-    bmp388_0: bmp388@77 {
-        compatible = "bosch,bmp388";
-        reg = <0x77>;
-        status = "okay";
-        odr = "12.5";
-        osr-press = <16>;
-        osr-temp = <2>;
-        iir-filter = <3>;
-    };
+	bmp390_0: bmp390@77 {
+    	compatible = "bosch,bmp390";
+    	reg = <0x77>;
+    	odr = "12.5";
+    	osr-press = <8>;
+    	osr-temp = <1>;
+    	iir-filter = <3>;
+	};
+    
+    
+    
 };
 
 &pinctrl {
@@ -112,4 +114,9 @@
 
 &adc {
     status = "okay";
+};
+
+/* Onboard IMU niet gebruikt - voorkomt init error in log */
+&lsm6ds3tr_c {
+    status = "disabled";
 };
