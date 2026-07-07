@@ -59,9 +59,13 @@ config APP_USE_DSMR_SENSOR
     bool "Use DSMR P1 smart meter reader (UART)"
     default n
 
-config APP_USE_BMP388_SENSOR
-    bool "Use BMP388 sensor (I2C pressure/temperature)"
-    default n
+config APP_USE_BMP390_SENSOR
+	bool "Enable BMP390 pressure/temperature sensor"
+	default n
+	help
+	  BMP390 via I2C. Gebruikt de Zephyr BMP388 driver
+	  (register-compatibel, CONFIG_BMP388=y blijft nodig).
+	  Publiceert NDxx/OUT/BMP390-1/PRESSURE en /TEMP.
 
 config APP_USE_WATERMETER_SENSOR
     bool "Use watermeter (GPIO pulse counter via inductive sensor)"

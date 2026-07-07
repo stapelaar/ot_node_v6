@@ -1,0 +1,4 @@
+// Sensor overlay: BMP390 only — disables sht41, scd41
+// (BMP390 gebruikt de bmp388_0 DT node, register-compatibel)
+&sht4x0  { status = "disabled"; };
+&scd41_0 { status = "disabled"; };

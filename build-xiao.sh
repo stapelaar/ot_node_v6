@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # =============================================================
-#  build-xiao.sh — NCS 5.0.0 Thread sensor node builder
+#  build-xiao.sh — NCS Thread sensor node builder
 #  - Builds the Xiao nRF54L15 cpuapp target
 #  - Per-node configuration via nodes/NDxx.conf
 # =============================================================
@@ -25,8 +25,9 @@ ROLE_MTD_SED="${APP_DIR}/overlays/overlay-OT-network-mtd-sed.conf"
 SENSOR_SHT41="${APP_DIR}/overlays/overlay-sensors-sht41.overlay"
 SENSOR_SCD41="${APP_DIR}/overlays/overlay-sensors-scd41.overlay"
 SENSOR_SEN50="${APP_DIR}/overlays/overlay-sensors-sen50.overlay"
-SENSOR_BMP388="${APP_DIR}/overlays/overlay-sensors-bmp388.overlay"
+SENSOR_BMP390="${APP_DIR}/overlays/overlay-sensors-bmp390.overlay"
 SENSOR_MAX31856="${APP_DIR}/overlays/overlay-sensors-max31856.overlay"
+SENSOR_ND141_COMBI="${APP_DIR}/overlays/overlay-sensors-nd141-combi.overlay"
 SENSOR_NONE="${APP_DIR}/overlays/overlay-sensors-none.overlay"
 
 RED="\033[1;31m"
@@ -48,7 +49,7 @@ Options:
 
 Notes:
   * Role overlay auto-selected: FTD / MTD / MTD-SED
-  * Sensor overlay auto-selected: sht41 / scd41 / sen50 / bmp388 / max31856 / none
+  * Sensor overlay auto-selected: sht41 / scd41 / sen50 / bmp390 / max31856 / combi / none
   * Node config ALWAYS wins last.
   * Battery deployment: set CONFIG_SERIAL=n etc. in node conf directly.
 USAGE
@@ -93,17 +94,18 @@ else                                                      ROLE_OVERLAY="$ROLE_MT
 fi
 
 # Sensor overlay detection
-use_sht41=0; use_scd41=0; use_sen50=0; use_bmp388=0; use_max31856=0
-grep -Eq '^\s*CONFIG_APP_USE_SHT41_SENSOR\s*=\s*y'   "$NODE_CONF" && use_sht41=1
-grep -Eq '^\s*CONFIG_APP_USE_SCD41_SENSOR\s*=\s*y'   "$NODE_CONF" && use_scd41=1
-grep -Eq '^\s*CONFIG_APP_USE_SEN50_SENSOR\s*=\s*y'   "$NODE_CONF" && use_sen50=1
-grep -Eq '^\s*CONFIG_APP_USE_BMP388_SENSOR\s*=\s*y'  "$NODE_CONF" && use_bmp388=1
+use_sht41=0; use_scd41=0; use_sen50=0; use_bmp390=0; use_max31856=0
+grep -Eq '^\s*CONFIG_APP_USE_SHT41_SENSOR\s*=\s*y'    "$NODE_CONF" && use_sht41=1
+grep -Eq '^\s*CONFIG_APP_USE_SCD41_SENSOR\s*=\s*y'    "$NODE_CONF" && use_scd41=1
+grep -Eq '^\s*CONFIG_APP_USE_SEN50_SENSOR\s*=\s*y'    "$NODE_CONF" && use_sen50=1
+grep -Eq '^\s*CONFIG_APP_USE_BMP390_SENSOR\s*=\s*y'   "$NODE_CONF" && use_bmp390=1
 grep -Eq '^\s*CONFIG_APP_USE_MAX31856_SENSOR\s*=\s*y' "$NODE_CONF" && use_max31856=1
 
-if   [[ $use_sht41    -eq 1 ]]; then SENSOR_OVERLAY="$SENSOR_SHT41"
+if   [[ $use_max31856 -eq 1 && $use_bmp390 -eq 1 ]]; then SENSOR_OVERLAY="$SENSOR_ND141_COMBI"
+elif [[ $use_sht41    -eq 1 ]]; then SENSOR_OVERLAY="$SENSOR_SHT41"
 elif [[ $use_scd41    -eq 1 ]]; then SENSOR_OVERLAY="$SENSOR_SCD41"
 elif [[ $use_sen50    -eq 1 ]]; then SENSOR_OVERLAY="$SENSOR_SEN50"
-elif [[ $use_bmp388   -eq 1 ]]; then SENSOR_OVERLAY="$SENSOR_BMP388"
+elif [[ $use_bmp390   -eq 1 ]]; then SENSOR_OVERLAY="$SENSOR_BMP390"
 elif [[ $use_max31856 -eq 1 ]]; then SENSOR_OVERLAY="$SENSOR_MAX31856"
 else                                 SENSOR_OVERLAY="$SENSOR_NONE"
 fi

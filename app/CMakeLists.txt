@@ -38,8 +38,8 @@ if(CONFIG_APP_USE_DSMR_SENSOR)
     target_sources(app PRIVATE src/sensors/dsmr.c)
 endif()
 
-if(CONFIG_APP_USE_BMP388_SENSOR)
-    target_sources(app PRIVATE src/sensors/bmp388.c)
+if(CONFIG_APP_USE_BMP390_SENSOR)
+    target_sources(app PRIVATE src/sensors/bmp390.c)
 endif()
 
 if(CONFIG_APP_USE_WATERMETER_SENSOR)

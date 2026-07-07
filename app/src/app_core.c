@@ -24,8 +24,8 @@
 #include "dsmr.h"
 #endif
 
-#if IS_ENABLED(CONFIG_APP_USE_BMP388_SENSOR)
-#include "bmp388.h"
+#if IS_ENABLED(CONFIG_APP_USE_BMP390_SENSOR)
+#include "bmp390.h"
 #endif
 
 #if IS_ENABLED(CONFIG_APP_USE_WATERMETER_SENSOR)
@@ -108,8 +108,8 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
         dsmr_sample_and_publish(app_node_name());
 #endif
 
-#if IS_ENABLED(CONFIG_APP_USE_BMP388_SENSOR)
-        bmp388_sample_and_publish(app_node_name());
+#if IS_ENABLED(CONFIG_APP_USE_BMP390_SENSOR)
+        bmp390_sample_and_publish(app_node_name());
 #endif
 
 #if IS_ENABLED(CONFIG_APP_USE_WATERMETER_SENSOR)
