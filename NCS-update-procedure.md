@@ -10,7 +10,7 @@ Workspace: `~/ncs/v3.2.4/` (mapnaam blijft, inhoud wijzigt — let op verwarring
   
 cd ~/ncs/v3.2.4/ot_node_v6  
 git add -A
-git commit -m "laatste versie"
+git commit -m "voor de ncs update van 3.2.4 naar 3.3.1"
 git push
   
   
@@ -88,6 +88,12 @@ cd ~/ncs/v3.2.4/ot_node_v6
 ## 7. Afronden
 
 - Project committen: "NCS vX.Y.Z migration: ..."
+
+cd ~/ncs/v3.2.4/ot_node_v6  
+git add -A
+git commit -m "NA de ncs update van 3.2.4 naar 3.3.1"
+git push
+
 - In README noteren welke NCS versie minimaal vereist is.
 - Resterende node-types pas herbouwen/herflashen wanneer nodig, één voor één.
 

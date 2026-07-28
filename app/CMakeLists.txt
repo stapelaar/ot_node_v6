@@ -19,7 +19,6 @@ target_sources(app PRIVATE
     src/transport/coap_client.c
     src/node_cmd.c
     src/shell_utils.c
-
 )
 
 if(CONFIG_APP_USE_SHT41_SENSOR)
@@ -34,10 +33,6 @@ if(CONFIG_APP_USE_SEN50_SENSOR)
     target_sources(app PRIVATE src/sensors/sen50.c)
 endif()
 
-if(CONFIG_APP_USE_DSMR_SENSOR)
-    target_sources(app PRIVATE src/sensors/dsmr.c)
-endif()
-
 if(CONFIG_APP_USE_BMP390_SENSOR)
     target_sources(app PRIVATE src/sensors/bmp390.c)
 endif()
@@ -46,16 +41,9 @@ if(CONFIG_APP_USE_WATERMETER_SENSOR)
     target_sources(app PRIVATE src/sensors/watermeter.c)
 endif()
 
-if(CONFIG_APP_USE_DS18B20_SENSOR OR CONFIG_APP_USE_MAX31850_SENSOR)
-    target_sources(app PRIVATE src/sensors/onewire_inventory.c)
-endif()
-
 if(CONFIG_APP_USE_DS18B20_SENSOR)
+    target_sources(app PRIVATE src/sensors/onewire_inventory.c)
     target_sources(app PRIVATE src/sensors/ds18b20.c)
-endif()
-
-if(CONFIG_APP_USE_MAX31850_SENSOR)
-    target_sources(app PRIVATE src/sensors/max31850.c)
 endif()
 
 if(CONFIG_APP_USE_MAX31856_SENSOR)

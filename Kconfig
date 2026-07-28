@@ -28,10 +28,6 @@ config APP_USE_DS18B20_SENSOR
     bool "Use DS18B20 sensor (1-Wire temperature)"
     default n
 
-config APP_USE_MAX31850_SENSOR
-    bool "Use MAX31850 sensor (1-Wire thermocouple)"
-    default n
-    
 config APP_USE_MAX31856_SENSOR
 	bool "Enable MAX31856 SPI thermocouple sensor(s)"
 	default n
@@ -50,13 +46,8 @@ config APP_MAX31856_COUNT
 	  Number of MAX31856 thermocouple sensors on the SPI bus.
 	  Only sensors 1..N will be initialized and published.
 
-
 config APP_USE_SEN50_SENSOR
     bool "Use SEN50 sensor (I2C particulate matter)"
-    default n
-
-config APP_USE_DSMR_SENSOR
-    bool "Use DSMR P1 smart meter reader (UART)"
     default n
 
 config APP_USE_BMP390_SENSOR
@@ -70,6 +61,15 @@ config APP_USE_BMP390_SENSOR
 config APP_USE_WATERMETER_SENSOR
     bool "Use watermeter (GPIO pulse counter via inductive sensor)"
     default n
+
+config APP_USE_BATT_SENSOR
+	bool "Enable battery voltage sensor (ADC P1.14/AIN7, VBAT_EN P1.15)"
+	default n
+	select ADC
+	help
+	  Reads LiPo battery voltage via onboard voltage divider (P1.14/AIN7).
+	  Enables P1.15 (VBAT_EN) briefly during each measurement.
+	  Publishes NDxx/OUT/BATT/MV (millivolt) and NDxx/OUT/BATT/PCT (percent).
 
 config APP_NODE_ID
     string "Node ID (e.g. 12 -> ND12)"
@@ -102,16 +102,6 @@ config APP_COAP_RETRIES
     int "CoAP CON retries"
     default 3
     range 0 8
-    
-config APP_USE_BATT_SENSOR
-	bool "Enable battery voltage sensor (ADC P1.14/AIN7, VBAT_EN P1.15)"
-	default n
-	select ADC
-	help
-	  Reads LiPo battery voltage via onboard voltage divider (P1.14/AIN7).
-	  Enables P1.15 (VBAT_EN) briefly during each measurement.
-	  Publishes NDxx/OUT/BATT/MV (millivolt) and NDxx/OUT/BATT/PCT (percent).
-
 
 endmenu
 

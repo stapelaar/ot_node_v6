@@ -20,10 +20,6 @@
 #include "sen50.h"
 #endif
 
-#if IS_ENABLED(CONFIG_APP_USE_DSMR_SENSOR)
-#include "dsmr.h"
-#endif
-
 #if IS_ENABLED(CONFIG_APP_USE_BMP390_SENSOR)
 #include "bmp390.h"
 #endif
@@ -32,17 +28,10 @@
 #include "watermeter.h"
 #endif
 
-#if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR) || IS_ENABLED(CONFIG_APP_USE_MAX31850_SENSOR)
+#if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR)
 #define APP_HAS_ONEWIRE 1
 #include "onewire_inventory.h"
-#endif
-
-#if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR)
 #include "ds18b20.h"
-#endif
-
-#if IS_ENABLED(CONFIG_APP_USE_MAX31850_SENSOR)
-#include "max31850.h"
 #endif
 
 #if IS_ENABLED(CONFIG_APP_USE_MAX31856_SENSOR)
@@ -78,7 +67,7 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
     if (device_is_ready(w1_bus)) {
         int rc = ow_inventory_scan(&ow_inv, w1_bus,
                                    IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR),
-                                   IS_ENABLED(CONFIG_APP_USE_MAX31850_SENSOR));
+                                   false /* MAX31850 support removed */);
         ow_scanned = (rc == 0);
     } else {
         LOG_WRN("1-Wire bus not ready, skipping scan");
@@ -104,10 +93,6 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
         sen50_sample_and_publish(app_node_name());
 #endif
 
-#if IS_ENABLED(CONFIG_APP_USE_DSMR_SENSOR)
-        dsmr_sample_and_publish(app_node_name());
-#endif
-
 #if IS_ENABLED(CONFIG_APP_USE_BMP390_SENSOR)
         bmp390_sample_and_publish(app_node_name());
 #endif
@@ -119,12 +104,6 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
 #if IS_ENABLED(CONFIG_APP_USE_DS18B20_SENSOR)
         if (ow_scanned) {
             ds18b20_sample_and_publish(app_node_name(), &ow_inv);
-        }
-#endif
-
-#if IS_ENABLED(CONFIG_APP_USE_MAX31850_SENSOR)
-        if (ow_scanned) {
-            max31850_sample_and_publish(app_node_name(), &ow_inv);
         }
 #endif
 
