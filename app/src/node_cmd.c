@@ -59,6 +59,14 @@ static int dispatch(const char *root, char *cmd)
     }
 
     /* ── INTERVAL:<seconden> ──────────────────────────────────────────────── */
+#if IS_ENABLED(CONFIG_APP_USE_WATERMETER_SENSOR)
+    /* Cadence is heilig voor pulstellers — LITERS_DELTA berekening
+     * veronderstelt een vast meetinterval. INTERVAL wijzigen weigeren. */
+    if (strncmp(cmd, "INTERVAL:", 9) == 0) {
+        ack(root, "ERR:INTERVAL:LOCKED");
+        return;
+    }
+#endif
     if (strncmp(cmd, "INTERVAL:", 9) == 0) {
         uint32_t secs = (uint32_t)strtoul(cmd + 9, NULL, 10);
         int rc = app_settings_set_interval_s(secs);

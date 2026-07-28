@@ -1,21 +1,5 @@
 menu "App options"
 
-config APP_DEBUG_SENSOR
-    bool "Log sensor detection and readouts"
-    default y
-
-config APP_DEBUG_TRANSPORT
-    bool "Log CoAP publishes (topic and result code)"
-    default y
-
-config APP_TRANSPORT_COAP
-    bool "Use CoAP transport"
-    default y
-
-config APP_PUBLISH_UPTIME
-    bool "Publish uptime"
-    default y
-
 config APP_USE_SHT41_SENSOR
     bool "Use SHT41 sensor (I2C temp/humidity)"
     default n
@@ -61,6 +45,15 @@ config APP_USE_BMP390_SENSOR
 config APP_USE_WATERMETER_SENSOR
     bool "Use watermeter (GPIO pulse counter via inductive sensor)"
     default n
+    select APP_INTERVAL_LOCKED
+
+config APP_INTERVAL_LOCKED
+    bool "Lock measurement interval (reject INTERVAL command)"
+    default n
+    help
+      Weiger het INTERVAL commando via NDxx/IN/CMD. Voor nodes waar de
+      meetcadans vast moet blijven: pulstellers (watermeter/regenmeter,
+      automatisch via select) en vocht-triggernodes zoals badkamer/douche.
 
 config APP_USE_BATT_SENSOR
 	bool "Enable battery voltage sensor (ADC P1.14/AIN7, VBAT_EN P1.15)"
