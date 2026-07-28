@@ -59,12 +59,12 @@ static int dispatch(const char *root, char *cmd)
     }
 
     /* ── INTERVAL:<seconden> ──────────────────────────────────────────────── */
-#if IS_ENABLED(CONFIG_APP_USE_WATERMETER_SENSOR)
-    /* Cadence is heilig voor pulstellers — LITERS_DELTA berekening
-     * veronderstelt een vast meetinterval. INTERVAL wijzigen weigeren. */
+#if IS_ENABLED(CONFIG_APP_INTERVAL_LOCKED)
+    /* Cadence is heilig op deze node (pulsteller of vocht-trigger) —
+     * INTERVAL wijzigen weigeren. */
     if (strncmp(cmd, "INTERVAL:", 9) == 0) {
         ack(root, "ERR:INTERVAL:LOCKED");
-        return;
+        return 0;
     }
 #endif
     if (strncmp(cmd, "INTERVAL:", 9) == 0) {
@@ -74,6 +74,14 @@ static int dispatch(const char *root, char *cmd)
             char reply[32];
             snprintk(reply, sizeof(reply), "OK:INTERVAL:%u", secs);
             ack(root, reply);
+
+            /* Houd OH in sync: publiceer de nieuwe waarde op het SYS topic */
+            char topic[64];
+            char payload[16];
+            if (topic_build(topic, sizeof(topic), root, "OUT", "SYS", "INTERVAL") == 0) {
+                snprintk(payload, sizeof(payload), "%u", secs);
+                transport_publish(topic, payload);
+            }
         } else {
             ack(root, "ERR:INTERVAL:INVALID");
         }

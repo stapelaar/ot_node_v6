@@ -2,6 +2,20 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(ot_node_v6)
 
+# ── Git commit hash inbakken (bepaald bij configure; altijd pristine bouwen) ──
+execute_process(
+    COMMAND git describe --always --dirty
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NOT GIT_HASH)
+    set(GIT_HASH "nogit")
+endif()
+message(STATUS "Firmware git hash: ${GIT_HASH}")
+target_compile_definitions(app PRIVATE GIT_HASH="${GIT_HASH}")
+
 target_include_directories(app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/sensors

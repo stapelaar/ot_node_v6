@@ -1,0 +1,12 @@
+# In app/src/main.c (of waar de boot banner staat):
+#
+# 1. Bovenaan toevoegen:
+#      #include <app_version.h>
+#
+# 2. De banner regel:
+#      LOG_INF(" ot_node v6.1.0-ncs");
+#    vervangen door:
+#      LOG_INF(" ot_node v%s+%s", APP_VERSION_STRING, GIT_HASH);
+#
+# Console en MQTT SYS/FW tonen dan altijd dezelfde identiteit.
+# Vanaf nu versie bumpen in het VERSION bestand (app root), niet in code.

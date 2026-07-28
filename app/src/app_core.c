@@ -1,4 +1,5 @@
 #include <zephyr/kernel.h>
+#include <app_version.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
@@ -46,6 +47,31 @@ LOG_MODULE_REGISTER(app_core, LOG_LEVEL_INF);
 
 static bool thread_attached;
 
+/* ── Publiceer basis-info eenmalig na boot/reset ────────────────────────── */
+#include "topic.h"
+#include "transport.h"
+
+static void publish_sys_info(const char *root)
+{
+    char topic[64];
+    char payload[40];
+
+    if (topic_build(topic, sizeof(topic), root, "OUT", "SYS", "INTERVAL") == 0) {
+        snprintk(payload, sizeof(payload), "%u", app_settings_get_interval_s());
+        if (transport_publish(topic, payload) == 0) {
+            LOG_INF("SYS announce: interval=%s s", payload);
+        }
+    }
+
+    if (topic_build(topic, sizeof(topic), root, "OUT", "SYS", "FW") == 0) {
+        snprintk(payload, sizeof(payload), "%s+%s %s",
+                 APP_VERSION_STRING, GIT_HASH, __DATE__);
+        if (transport_publish(topic, payload) == 0) {
+            LOG_INF("SYS announce: fw=%s", payload);
+        }
+    }
+}
+
 #if APP_HAS_ONEWIRE
 static const struct device *const w1_bus = DEVICE_DT_GET(DT_ALIAS(onewire0));
 static struct ow_inventory ow_inv;
@@ -80,6 +106,12 @@ static void sample_thread_entry(void *arg1, void *arg2, void *arg3)
         counter++;
         uint32_t interval_s = app_settings_get_interval_s();
         LOG_INF("Cycle %d - start (interval=%us)", counter, interval_s);
+
+        if (counter == 1) {
+            /* Eenmalige announce na boot/reset: actuele instellingen.
+             * In de eerste cyclus zodat transport lazy-init gewoon werkt. */
+            publish_sys_info(app_node_name());
+        }
 
 #if IS_ENABLED(CONFIG_APP_USE_SHT41_SENSOR)
         sht41_sample_and_publish(app_node_name());
