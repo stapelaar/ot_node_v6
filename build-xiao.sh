@@ -173,3 +173,19 @@ else
 fi
 
 echo -e "${GRN}✔ Build voltooid voor node ${NODE}.${RST}"
+
+# ── Git dirty-check: herinner aan committen vóórdat je een build vertrouwt ──
+GIT_STATE="$(cd "$APP_DIR" && git describe --always --dirty 2>/dev/null || echo "nogit")"
+if [[ "$GIT_STATE" == *-dirty ]]; then
+    echo ""
+    echo -e "${RED}╔═══════════════════════════════════════════════════════════════╗${RST}"
+    echo -e "${RED}║  ⚠  DIRTY BUILD — niet-gecommitte wijzigingen zijn meegebouwd  ║${RST}"
+    echo -e "${RED}║     Firmware identiteit: ${GIT_STATE}${RST}"
+    echo -e "${RED}║     Niet reproduceerbaar — commit voordat je deze flasht.       ║${RST}"
+    echo -e "${RED}╚═══════════════════════════════════════════════════════════════╝${RST}"
+    echo ""
+elif [[ "$GIT_STATE" == "nogit" ]]; then
+    echo -e "${RED}⚠ Geen git repo gevonden — firmware-identiteit onbekend.${RST}"
+else
+    echo -e "${GRN}✔ Clean build — firmware identiteit: ${GIT_STATE}${RST}"
+fi
